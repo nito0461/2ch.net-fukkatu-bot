@@ -74,14 +74,22 @@ class AuthorizeView(discord.ui.View):
 async def on_button_click(interaction: discord.Interaction):
 	custom_id = interaction.data["custom_id"]
 	if custom_id == "authorize":
-		code = random_code(10)
-		view = AuthorizeView(code, timeout=300)
-		embed = discord.Embed(
-			title="サーバーに参加するためには、認証が必要です",
-			description=f"5分以内に、[２ch.net復活させようぜw のスレッド](https://viper.2ch.sc/test/read.cgi/news4vip/1710319736/) ( https://viper.2ch.sc/test/read.cgi/news4vip/1710319736/ )にて、以下の内容を投稿してください。投稿したあと、「✅書き込んだ」ボタンを教えて下さい。\n```\n-= 以下の文字列は、Discord支部のユーザーの認証のための文字列です =-\n{code}\n-= 以上の文字列は、Discord支部のユーザーの認証のための文字列です =-```",
-			color=discord.Colour.purple()
-		)
-		await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
+		if not client.get_guild(1218841426918510632).get_role(1218852144850010174) in interaction.user.roles:
+			code = random_code(10)
+			view = AuthorizeView(code, timeout=300)
+			embed = discord.Embed(
+				title="サーバーに参加するためには、認証が必要です",
+				description=f"5分以内に、[２ch.net復活させようぜw のスレッド](https://viper.2ch.sc/test/read.cgi/news4vip/1710319736/) ( https://viper.2ch.sc/test/read.cgi/news4vip/1710319736/ )にて、以下の内容を投稿してください。投稿したあと、「✅書き込んだ」ボタンを教えて下さい。\n```\n-= 以下の文字列は、Discord支部のユーザーの認証のための文字列です =-\n{code}\n-= 以上の文字列は、Discord支部のユーザーの認証のための文字列です =-```",
+				color=discord.Colour.purple()
+			)
+			await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
+		else:
+			embed = discord.Embed(
+				title="あなたは既に認証しています！",
+				description="",
+				color=discord.Colour.red()
+			)
+			await interaction.response.send_message(embed=embed, ephemeral=True)
 
 @tree.command(name="ping", description="pingを計測します")
 async def ping(interaction: discord.Interaction):
