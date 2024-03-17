@@ -79,7 +79,7 @@ async def on_button_click(interaction: discord.Interaction):
 			view = AuthorizeView(code, timeout=300)
 			embed = discord.Embed(
 				title="サーバーに参加するためには、認証が必要です",
-				description=f"5分以内に、[２ch.net復活させようぜw のスレッド](https://viper.2ch.sc/test/read.cgi/news4vip/1710319736/) ( https://viper.2ch.sc/test/read.cgi/news4vip/1710319736/ )にて、以下の内容を投稿してください。投稿したあと、「✅書き込んだ」ボタンを教えて下さい。\n```\n-= 以下の文字列は、Discord支部のユーザーの認証のための文字列です =-\n{code}\n-= 以上の文字列は、Discord支部のユーザーの認証のための文字列です =-```",
+				description=f"5分以内に、[２ch.net復活させようぜw のスレッド](https://viper.2ch.sc/test/read.cgi/news4vip/1710319736/) ( https://viper.2ch.sc/test/read.cgi/news4vip/1710319736/ )にて、以下の内容を投稿してください。投稿したあと、「✅書き込んだ」ボタンを教えて下さい。\n```\n-= Discord支部の認証用文字列です: {code}\n-=\n```",
 				color=discord.Colour.purple()
 			)
 			await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
