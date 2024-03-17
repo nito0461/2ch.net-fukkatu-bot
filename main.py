@@ -1,0 +1,96 @@
+import discord
+from discord import app_commands
+from discord.ext import tasks
+import os
+from keep_alive import keep_alive
+import psutil
+import aiohttp
+import random
+import string
+import chardet
+
+if os.path.isfile(".env") == True:
+	from dotenv import load_dotenv
+	load_dotenv(verbose=True)
+
+client = discord.Client(intents=discord.Intents.default())
+tree = app_commands.CommandTree(client=client)
+
+@client.event
+async def on_ready():
+	await tree.sync()
+	print("起動!")
+	"""
+	button = discord.ui.Button(emoji="✅", label="認証する", style=discord.ButtonStyle.primary, custom_id="authorize")
+	view = discord.ui.View()
+	view.add_item(button)
+	embed = discord.Embed(
+		title="このサーバーに参加するためには、認証が必要です！",
+		description="下の「✅認証する」ボタンを押して、認証を開始してください。",
+	)
+	await client.get_guild(1218841426918510632).get_channel(1218843075099627581).send(embed=embed, view=view)
+	"""
+
+#全てのインタラクションを取得
+@client.event
+async def on_interaction(interaction: discord.Interaction):
+	try:
+		if interaction.data['component_type'] == 2:
+			await on_button_click(interaction)
+		"""
+		elif inter.data['component_type'] == 3:
+			await on_dropdown(inter)
+		"""
+	except KeyError:
+		pass
+
+def random_code(length):
+	alphanumeric_chars = string.ascii_letters + string.digits
+	return ''.join(random.choice(alphanumeric_chars) for _ in range(length))
+
+class AuthorizeView(discord.ui.View):
+	def __init__(self, code, timeout=300):
+		super().__init__(timeout=timeout)
+		self.code = code
+	
+	@discord.ui.button(emoji="✅" ,label="書き込んだ", style=discord.ButtonStyle.primary)
+	async def writed(self, interaction: discord.Interaction, button: discord.ui.Button):
+		await interaction.response.defer()
+		async with aiohttp.ClientSession() as session:
+			async with session.get("https://viper.2ch.sc/news4vip/dat/1710319736.dat") as response:
+				data = await response.read()
+				# 文字コードを検出
+				encoding = chardet.detect(data)['encoding']
+				# Shift-JISでデコード
+				dat = data.decode(encoding)
+				if self.code in dat:
+					await interaction.user.add_roles(client.get_guild(1218841426918510632).get_role(1218852144850010174))
+					await client.get_guild(1218841426918510632).get_channel(1218844037029560402).send(f"{interaction.user.mention} の認証が完了しました。")
+					await interaction.followup.send("**認証が完了しました。**", ephemeral=True)
+					await client.get_guild(1218841426918510632).get_channel(1218884896379113572).send(f"{interaction.user.mention} の認証が完了しました。\nコード: {self.code}")
+				else:
+					await interaction.followup.send("認証に失敗しました。", ephemeral=True)
+
+async def on_button_click(interaction: discord.Interaction):
+	custom_id = interaction.data["custom_id"]
+	if custom_id == "authorize":
+		code = random_code(10)
+		view = AuthorizeView(code, timeout=300)
+		embed = discord.Embed(
+			title="サーバーに参加するためには、認証が必要です",
+			description=f"5分以内に、[２ch.net復活させようぜw のスレッド](https://viper.2ch.sc/test/read.cgi/news4vip/1710319736/) ( https://viper.2ch.sc/test/read.cgi/news4vip/1710319736/ )にて、以下の内容を投稿してください。投稿したあと、「✅書き込んだ」ボタンを教えて下さい。\n```\n-= 以下の文字列は、Discord支部のユーザーの認証のための文字列です =-\n{code}\n-= 以上の文字列は、Discord支部のユーザーの認証のための文字列です =-```",
+			color=discord.Colour.purple()
+		)
+		await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
+
+@tree.command(name="ping", description="pingを計測します")
+async def ping(interaction: discord.Interaction):
+	ping = client.latency
+	cpu_percent = psutil.cpu_percent()
+	mem = psutil.virtual_memory() 
+	embed = discord.Embed(title="Ping", description=f"Ping : {ping*1000}ms\nCPU : {cpu_percent}%\nMemory : {mem.percent}%", color=discord.Colour.gold())
+	embed.set_thumbnail(url=client.user.display_avatar.url)
+	await interaction.response.send_message(embed=embed)
+
+keep_alive()
+client.run(os.getenv("discord"))
