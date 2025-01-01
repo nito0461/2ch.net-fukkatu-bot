@@ -29,7 +29,7 @@ async def on_ready():
 		title="このサーバーに参加するためには、認証が必要です！",
 		description="下の「✅認証する」ボタンを押して、認証を開始してください。",
 	)
-	await client.get_guild(1324023611652178033).get_channel(1324023611652178036).send(embed=embed, view=view)
+	await client.get_guild(1324023611652178033).get_channel(1324031844404039733).send(embed=embed, view=view)
 	"""
 
 #全てのインタラクションを取得
@@ -67,9 +67,9 @@ class AuthorizeView(discord.ui.View):
 					dat = data.decode(encoding)
 					if self.code in dat:
 						await interaction.user.add_roles(client.get_guild(1324023611652178033).get_role(1324023783379435581))
-						await client.get_guild(1324023611652178033).get_channel(1324023611652178036).send(f"{interaction.user.mention} の認証が完了しました。")
+						await client.get_guild(1324023611652178033).get_channel(1324031844404039733).send(f"{interaction.user.mention} の認証が完了しました。")
 						await interaction.followup.send("**認証が完了しました。**", ephemeral=True)
-						await client.get_guild(1324023611652178033).get_channel(1324023611652178036).send(f"{interaction.user.mention} の認証が完了しました。\nコード: {self.code}")
+						await client.get_guild(1324023611652178033).get_channel(1324031844404039733).send(f"{interaction.user.mention} の認証が完了しました。\nコード: {self.code}")
 					else:
 						await interaction.followup.send("認証に失敗しました。", ephemeral=True)
 		except:
