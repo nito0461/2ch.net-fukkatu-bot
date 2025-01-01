@@ -42,11 +42,7 @@ async def setup_auth(
         "log_channel": log_channel
     }
 	
-    await interaction.response.send_message("認証メッセージのセットアップが完了しました。", ephemeral=True)
-
-@client.event
-async def on_ready():
-	await tree.sync()
+    await tree.sync()
 	print("起動!")
 	"""
 	button = discord.ui.Button(emoji="✅", label="認証する", style=discord.ButtonStyle.primary, custom_id="authorize")
@@ -59,8 +55,6 @@ async def on_ready():
 	await client.guild.channel.send(embed=embed, view=view)
 	"""
 
-#全てのインタラクションを取得
-@client.event
 async def on_interaction(interaction: discord.Interaction):
 	try:
 		if interaction.data['component_type'] == 2:
@@ -77,11 +71,11 @@ def random_code(length):
 	return ''.join(random.choice(alphanumeric_chars) for _ in range(length))
 
 class AuthorizeView(discord.ui.View):
-    def __init__(self, code, timeout=300):
-        super().__init__(timeout=timeout)
-        self.code = code
-    
-    @discord.ui.button(emoji="✅", label="書き込んだ", style=discord.ButtonStyle.primary)
+	def __init__(self, code, timeout=300):
+		super().__init__(timeout=timeout)
+		self.code = code
+	
+	    @discord.ui.button(emoji="✅", label="書き込んだ", style=discord.ButtonStyle.primary)
     async def writed(self, interaction: discord.Interaction, button: discord.ui.Button):
         await interaction.response.defer()
         try:
@@ -118,6 +112,7 @@ class AuthorizeView(discord.ui.View):
                     description=f"エラーが発生しました。\n以下、トレースバックです。```python\n{traceback.format_exc()}\n```"
                 )
                 await webhook.send(embed=embed)
+				
 async def on_button_click(interaction: discord.Interaction):
 	custom_id = interaction.data["custom_id"]
 	try:
