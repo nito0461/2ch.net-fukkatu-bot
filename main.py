@@ -112,7 +112,7 @@ async def on_button_click(interaction: discord.Interaction):
     custom_id = interaction.data["custom_id"]
     try:
         if custom_id == "authorize":
-            if not client.guild.role in interaction.user.roles:
+            if not any(role.id == guild_settings[interaction.guild.id]["role"].id for role in interaction.user.roles):
                 code = random_code(10)
                 view = AuthorizeView(code, timeout=300)
                 embed = discord.Embed(
