@@ -112,7 +112,9 @@ async def on_button_click(interaction: discord.Interaction):
     custom_id = interaction.data["custom_id"]
     try:
         if custom_id == "authorize":
-            if not any(role.id == guild_settings[interaction.guild.id]["role"].id for role in interaction.user.roles):
+            # ユーザーが認証済みかどうかを確認
+            role = guild_settings[interaction.guild.id]["role"]
+            if not any(r.id == role.id for r in interaction.user.roles):  # ユーザーにロールが付与されていない場合
                 code = random_code(10)
                 view = AuthorizeView(code, timeout=300)
                 embed = discord.Embed(
@@ -128,7 +130,7 @@ async def on_button_click(interaction: discord.Interaction):
                     color=discord.Colour.red()
                 )
                 await interaction.response.send_message(embed=embed, ephemeral=True)
-    except:
+    except Exception as e:
         embed = discord.Embed(
             title="エラーが発生しました。",
             description=f"エラーは <@1209770634628825130> に報告されました。修正されるのをお待ち下さい。\n```python\n{traceback.format_exc()}```",
