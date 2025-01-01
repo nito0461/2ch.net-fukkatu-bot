@@ -79,21 +79,21 @@ class AuthorizeView(discord.ui.View):
         try:
             async with aiohttp.ClientSession() as session:
                 async with session.get("https://viper.2ch.sc/news4vip/dat/1717936187.dat") as response:
-　　　　　　　　　　　data = await response.read()
-					# 文字コードを検出
-					encoding = chardet.detect(data)['encoding']
-					# Shift-JISでデコード
-					dat = data.decode(encoding)
-                    guild = interaction.guild
-                    if self.code in dat:
-                        role = guild_settings[guild.id]["role"]
-                        await interaction.user.add_roles(role)
-                        log_channel = guild_settings[guild.id]["log_channel"]
-                        await log_channel.send(f"{interaction.user.mention} の認証が完了しました。")
-                        await interaction.followup.send("**認証が完了しました。**", ephemeral=True)
-                        await guild.text_channels[0].send(f"{interaction.user.mention} の認証が完了しました。\nコード: {self.code}")
-                    else:
-                        await interaction.followup.send("認証に失敗しました。", ephemeral=True)
+			data = await response.read()
+			# 文字コードを検出
+　　　　　　　encoding = chardet.detect(data)['encoding']
+　　　　　　　# Shift-JISでデコード
+　　　　　　　dat = data.decode(encoding)
+            guild = interaction.guild
+            if self.code in dat:
+                role = guild_settings[guild.id]["role"]
+                await interaction.user.add_roles(role)
+                log_channel = guild_settings[guild.id]["log_channel"]
+                await log_channel.send(f"{interaction.user.mention} の認証が完了しました。")
+                await interaction.followup.send("**認証が完了しました。**", ephemeral=True)
+                await guild.text_channels[0].send(f"{interaction.user.mention} の認証が完了しました。\nコード: {self.code}")
+            else:
+                await interaction.followup.send("認証に失敗しました。", ephemeral=True)
         except Exception as e:
             embed = discord.Embed(
                 title="エラーが発生しました。",
