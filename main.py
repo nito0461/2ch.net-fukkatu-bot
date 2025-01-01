@@ -77,11 +77,11 @@ def random_code(length):
 	return ''.join(random.choice(alphanumeric_chars) for _ in range(length))
 
 class AuthorizeView(discord.ui.View):
-	def __init__(self, code, timeout=300):
-		super().__init__(timeout=timeout)
-		self.code = code
-	
-	    @discord.ui.button(emoji="✅", label="書き込んだ", style=discord.ButtonStyle.primary)
+    def __init__(self, code, timeout=300):
+        super().__init__(timeout=timeout)
+        self.code = code
+    
+    @discord.ui.button(emoji="✅", label="書き込んだ", style=discord.ButtonStyle.primary)
     async def writed(self, interaction: discord.Interaction, button: discord.ui.Button):
         await interaction.response.defer()
         try:
@@ -118,7 +118,6 @@ class AuthorizeView(discord.ui.View):
                     description=f"エラーが発生しました。\n以下、トレースバックです。```python\n{traceback.format_exc()}\n```"
                 )
                 await webhook.send(embed=embed)
-				
 async def on_button_click(interaction: discord.Interaction):
 	custom_id = interaction.data["custom_id"]
 	try:
