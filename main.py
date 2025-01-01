@@ -79,9 +79,11 @@ class AuthorizeView(discord.ui.View):
         try:
             async with aiohttp.ClientSession() as session:
                 async with session.get("https://viper.2ch.sc/news4vip/dat/1717936187.dat") as response:
-                    data = await response.read()
-                    encoding = chardet.detect(data)['encoding']
-                    dat = data.decode(encoding)
+　　　　　　　　　　　data = await response.read()
+					# 文字コードを検出
+					encoding = chardet.detect(data)['encoding']
+					# Shift-JISでデコード
+					dat = data.decode(encoding)
                     guild = interaction.guild
                     if self.code in dat:
                         role = guild_settings[guild.id]["role"]
