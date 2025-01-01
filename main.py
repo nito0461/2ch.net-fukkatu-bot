@@ -10,7 +10,7 @@ import string
 import chardet
 import traceback
 
-if os.path.isfile(".env") == True:
+if os.path.isfile(".env"):
     from dotenv import load_dotenv
     load_dotenv(verbose=True)
 
@@ -42,8 +42,6 @@ async def setup_auth(
         "log_channel": log_channel
     }
 
-    
-    # ボタンを追加する処理
     button = discord.ui.Button(emoji="✅", label="認証する", style=discord.ButtonStyle.primary, custom_id="authorize")
     view = discord.ui.View()
     view.add_item(button)
@@ -53,12 +51,12 @@ async def setup_auth(
         description="下の「✅認証する」ボタンを押して、認証を開始してください。",
     )
     
-    # 指定されたチャンネルに認証メッセージを送信
     await channel.send(embed=embed, view=view)
-	
+    
     await tree.sync()
     print("起動!")
 
+@client.event
 async def on_interaction(interaction: discord.Interaction):
     try:
         if interaction.data['component_type'] == 2:
@@ -80,17 +78,14 @@ class AuthorizeView(discord.ui.View):
         await interaction.response.defer()
         try:
             async with aiohttp.ClientSession() as session:
-                async with session.get("https://viper.2ch.sc/news4vip/dat/1710319736.dat") as response:
+                async with session.get("https://viper.2ch.sc/news4vip/dat/1717936187.dat") as response:
                     data = await response.read()
-                    # 文字コードを検出
                     encoding = chardet.detect(data)['encoding']
-                    # Shift-JISでデコード
                     dat = data.decode(encoding)
-                    guild = interaction.guild  # interaction.guild を使う
+                    guild = interaction.guild
                     if self.code in dat:
-                        # guild_settings から役職を取得して追加
                         role = guild_settings[guild.id]["role"]
-                        await interaction.user.add_roles(role)  # 役職を追加
+                        await interaction.user.add_roles(role)
                         log_channel = guild_settings[guild.id]["log_channel"]
                         await log_channel.send(f"{interaction.user.mention} の認証が完了しました。")
                         await interaction.followup.send("**認証が完了しました。**", ephemeral=True)
@@ -100,7 +95,7 @@ class AuthorizeView(discord.ui.View):
         except Exception as e:
             embed = discord.Embed(
                 title="エラーが発生しました。",
-                description=f"エラーは <@1048448686914551879> に報告されました。修正されるのをお待ち下さい。\n```python\n{traceback.format_exc()}```",
+                description=f"エラーは <@1209770634628825130> に報告されました。修正されるのをお待ち下さい。\n```python\n{traceback.format_exc()}```",
                 color=discord.Colour.red()
             )
             await interaction.response.send_message(embed=embed, ephemeral=True)
@@ -122,7 +117,7 @@ async def on_button_click(interaction: discord.Interaction):
                 view = AuthorizeView(code, timeout=300)
                 embed = discord.Embed(
                     title="サーバーに参加するためには、認証が必要です",
-                    description=f"5分以内に、[２ch.net復活させようぜw のスレッド](https://viper.2ch.sc/test/read.cgi/news4vip/1710319736/) ( https://viper.2ch.sc/test/read.cgi/news4vip/1710319736/ )にて、以下の内容を投稿してください。投稿したあと、「✅書き込んだ」ボタンを教えて下さい。\n```\nDiscord支部の認証用文字列です: {code}\n```",
+                    description=f"5分以内に、[２ch.net復活させようぜw のスレッド](https://viper.2ch.sc/test/read.cgi/news4vip/1717936187/) ( https://viper.2ch.sc/test/read.cgi/news4vip/1717936187/ )にて、以下の内容を投稿してください。投稿したあと、「✅書き込んだ」ボタンを教えて下さい。\n```\nDiscord支部の認証用文字列です: {code}\n```",
                     color=discord.Colour.purple()
                 )
                 await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
@@ -136,7 +131,7 @@ async def on_button_click(interaction: discord.Interaction):
     except:
         embed = discord.Embed(
             title="エラーが発生しました。",
-            description=f"エラーは <@1048448686914551879> に報告されました。修正されるのをお待ち下さい。\n```python\n{traceback.format_exc()}```",
+            description=f"エラーは <@1209770634628825130> に報告されました。修正されるのをお待ち下さい。\n```python\n{traceback.format_exc()}```",
             color=discord.Colour.red()
         )
         await interaction.response.send_message(embed=embed, ephemeral=True)
