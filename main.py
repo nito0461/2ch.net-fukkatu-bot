@@ -10,128 +10,107 @@ import string
 import chardet
 import traceback
 
-if os.path.isfile(".env") == True:
-	from dotenv import load_dotenv
-	load_dotenv(verbose=True)
+if os.path.isfile(".env"):
+    from dotenv import load_dotenv
+    load_dotenv(verbose=True)
 
 client = discord.Client(intents=discord.Intents.default())
 tree = app_commands.CommandTree(client=client)
 
 @client.event
 async def on_ready():
-	await tree.sync()
-	print("起動!")
-	"""
-	button = discord.ui.Button(emoji="✅", label="認証する", style=discord.ButtonStyle.primary, custom_id="authorize")
-	view = discord.ui.View()
-	view.add_item(button)
-	embed = discord.Embed(
-		title="このサーバーに参加するためには、認証が必要です！",
-		description="下の「✅認証する」ボタンを押して、認証を開始してください。",
-	)
-	await client.get_guild(1324023611652178033).get_channel(1324031844404039733).send(embed=embed, view=view)
-	"""
+    await tree.sync()
+    print("起動完了！")
 
-#全てのインタラクションを取得
-@client.event
-async def on_interaction(interaction: discord.Interaction):
-	try:
-		if interaction.data['component_type'] == 2:
-			await on_button_click(interaction)
-		"""
-		elif inter.data['component_type'] == 3:
-			await on_dropdown(inter)
-		"""
-	except KeyError:
-		pass
+# 認証メッセージを指定のチャンネルに設置するコマンド
+@tree.command(name="setup_auth", description="認証メッセージを指定のチャンネルに設置します")
+@app_commands.describe(
+    channel="認証メッセージを送信するチャンネルを指定してください",
+    role="認証成功時に付与するロールを指定してください",
+    log_channel="ログを送信するチャンネルを指定してください"
+)
+async def setup_auth(
+    interaction: discord.Interaction, 
+    channel: discord.TextChannel, 
+    role: discord.Role, 
+    log_channel: discord.TextChannel
+):
+    if not interaction.user.guild_permissions.administrator:
+        await interaction.response.send_message("このコマンドを使用する権限がありません。", ephemeral=True)
+        return
+
+    code = random_code(10)
+    view = AuthorizeView(code, role, log_channel, timeout=300)
+
+    embed = discord.Embed(
+        title="サーバー認証",
+        description=(
+            f"以下のコードを [こちらのスレッド](https://viper.2ch.sc/test/read.cgi/news4vip/1717936187/) に投稿してください。\n\n"
+            f"認証用コード:\n```\nDiscord支部の認証用文字列です: {code}\n```\n\n"
+            "投稿後に「✅書き込んだ」を押してください。"
+        ),
+        color=discord.Color.blue()
+    )
+
+    await channel.send(embed=embed, view=view)
+    await interaction.response.send_message(f"{channel.mention} に認証メッセージを設置しました！ログは {log_channel.mention} に送信されます。", ephemeral=True)
 
 def random_code(length):
-	alphanumeric_chars = string.ascii_letters + string.digits
-	return ''.join(random.choice(alphanumeric_chars) for _ in range(length))
+    alphanumeric_chars = string.ascii_letters + string.digits
+    return ''.join(random.choice(alphanumeric_chars) for _ in range(length))
 
 class AuthorizeView(discord.ui.View):
-	def __init__(self, code, timeout=300):
-		super().__init__(timeout=timeout)
-		self.code = code
-	
-	@discord.ui.button(emoji="✅" ,label="書き込んだ", style=discord.ButtonStyle.primary)
-	async def writed(self, interaction: discord.Interaction, button: discord.ui.Button):
-		await interaction.response.defer()
-		try:
-			async with aiohttp.ClientSession() as session:
-				async with session.get("https://viper.2ch.sc/news4vip/dat/1717936187.dat") as response:
-					data = await response.read()
-					# 文字コードを検出
-					encoding = chardet.detect(data)['encoding']
-					# Shift-JISでデコード
-					dat = data.decode(encoding)
-					if self.code in dat:
-						await interaction.user.add_roles(client.get_guild(1324023611652178033).get_role(1324023783379435581))
-						await client.get_guild(1324023611652178033).get_channel(1324031844404039733).send(f"{interaction.user.mention} の認証が完了しました。")
-						await interaction.followup.send("**認証が完了しました。**", ephemeral=True)
-						await client.get_guild(1324023611652178033).get_channel(1324031844404039733).send(f"{interaction.user.mention} の認証が完了しました。\nコード: {self.code}")
-					else:
-						await interaction.followup.send("認証に失敗しました。", ephemeral=True)
-		except:
-			embed = discord.Embed(
-				title="エラーが発生しました。",
-				description=f"エラーは <@1209770634628825130> に報告されました。修正されるのをお待ち下さい。\n```python\n{traceback.format_exc()}```",
-				color=discord.Colour.red()
-			)
-			await interaction.response.send_message(embed=embed, ephemeral=True)
+    def __init__(self, code, role, log_channel, timeout=300):
+        super().__init__(timeout=timeout)
+        self.code = code
+        self.role = role
+        self.log_channel = log_channel
 
-			async with aiohttp.ClientSession() as session:
-				webhook = discord.Webhook.from_url(os.getenv("errorlog_webhook"), session=session)
-				embed = discord.Embed(
-					title="エラーログが届きました！",
-					description=f"エラーが発生しました。\n以下、トレースバックです。```python\n{traceback.format_exc()}\n```"
-				)
-				await webhook.send(embed=embed)
+    @discord.ui.button(emoji="✅", label="書き込んだ", style=discord.ButtonStyle.primary)
+    async def writed(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.defer()
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.get("https://viper.2ch.sc/news4vip/dat/1717936187.dat") as response:
+                    data = await response.read()
+                    encoding = chardet.detect(data)['encoding']
+                    dat = data.decode(encoding)
 
-async def on_button_click(interaction: discord.Interaction):
-	custom_id = interaction.data["custom_id"]
-	try:
-		if custom_id == "authorize":
-			if not client.get_guild(1324023611652178033).get_role(1324023783379435581) in interaction.user.roles:
-				code = random_code(10)
-				view = AuthorizeView(code, timeout=300)
-				embed = discord.Embed(
-					title="サーバーに参加するためには、認証が必要です",
-					description=f"5分以内に、[２ch.net復活させようぜw のスレッド](https://viper.2ch.sc/test/read.cgi/news4vip/1717936187/) ( https://viper.2ch.sc/test/read.cgi/news4vip/1717936187/ )にて、以下の内容を投稿してください。投稿したあと、「✅書き込んだ」ボタンを教えて下さい。\n```\nDiscord支部の認証用文字列です: {code}\n```",
-					color=discord.Colour.purple()
-				)
-				await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
-			else:
-				embed = discord.Embed(
-					title="あなたは既に認証しています！",
-					description="",
-					color=discord.Colour.red()
-				)
-				await interaction.response.send_message(embed=embed, ephemeral=True)
-	except:
-		embed = discord.Embed(
-			title="エラーが発生しました。",
-			description=f"エラーは <@1209770634628825130> に報告されました。修正されるのをお待ち下さい。\n```python\n{traceback.format_exc()}```",
-			color=discord.Colour.red()
-		)
-		await interaction.response.send_message(embed=embed, ephemeral=True)
+                    if self.code in dat:
+                        await interaction.user.add_roles(self.role)
+                        await interaction.followup.send("**認証が完了しました。**", ephemeral=True)
+                        if self.log_channel:
+                            await self.log_channel.send(f"{interaction.user.mention} の認証が完了しました。\nコード: {self.code}")
+                    else:
+                        await interaction.followup.send("認証に失敗しました。コードが確認できませんでした。", ephemeral=True)
+        except Exception:
+            embed = discord.Embed(
+                title="エラーが発生しました。",
+                description=f"問題が発生しました。管理者に連絡してください。\n```python\n{traceback.format_exc()}```",
+                color=discord.Color.red()
+            )
+            await interaction.response.send_message(embed=embed, ephemeral=True)
 
-		async with aiohttp.ClientSession() as session:
-			webhook = discord.Webhook.from_url(os.getenv("errorlog_webhook"), session=session)
-			embed = discord.Embed(
-				title="エラーログが届きました！",
-				description=f"エラーが発生しました。\n以下、トレースバックです。```python\n{traceback.format_exc()}\n```"
-			)
-			await webhook.send(embed=embed)
+            if self.log_channel:
+                error_embed = discord.Embed(
+                    title="エラーログが届きました！",
+                    description=f"```python\n{traceback.format_exc()}\n```",
+                    color=discord.Color.red()
+                )
+                await self.log_channel.send(embed=error_embed)
 
 @tree.command(name="ping", description="pingを計測します")
 async def ping(interaction: discord.Interaction):
-	ping = client.latency
-	cpu_percent = psutil.cpu_percent()
-	mem = psutil.virtual_memory() 
-	embed = discord.Embed(title="Ping", description=f"Ping : {ping*1000}ms\nCPU : {cpu_percent}%\nMemory : {mem.percent}%", color=discord.Colour.gold())
-	embed.set_thumbnail(url=client.user.display_avatar.url)
-	await interaction.response.send_message(embed=embed)
+    ping = client.latency
+    cpu_percent = psutil.cpu_percent()
+    mem = psutil.virtual_memory()
+    embed = discord.Embed(
+        title="Ping",
+        description=f"Ping : {ping*1000:.2f}ms\nCPU : {cpu_percent}%\nMemory : {mem.percent}%",
+        color=discord.Color.gold()
+    )
+    embed.set_thumbnail(url=client.user.display_avatar.url)
+    await interaction.response.send_message(embed=embed)
 
 keep_alive()
 client.run(os.getenv("discord"))
